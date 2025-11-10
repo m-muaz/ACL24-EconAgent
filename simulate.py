@@ -107,7 +107,13 @@ def gpt_actions(env, obs, dialog_queue, dialog4ref_queue, gpt_path, gpt_error, t
     for idx in range(env.num_agents):
         content = results[idx]
         try:
-            extracted_actions = list(eval(content).values())
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                extracted_actions = list(eval(json_str).values())
+            else:
+                raise ValueError("No JSON found in model output")
+
             if not action_check(extracted_actions):
                 extracted_actions = [1, 0.5]
                 gpt_error += 1
@@ -124,7 +130,7 @@ def gpt_actions(env, obs, dialog_queue, dialog4ref_queue, gpt_path, gpt_error, t
         with open(f'''{gpt_path}/{env.get_agent(str(idx)).endogenous['name']}''', 'a') as f:
             for dialog in list(agent_dialog)[-2:]:
                 f.write(f'''>>>>>>>>>{dialog['role']}: {dialog['content']}\n''')
-        
+
     if (env.world.timestep+1)%3 == 0:
         reflection_prompt = '''Given the previous quarter's economic environment, reflect on the labor, consumption, and financial markets, as well as their dynamics. What conclusions have you drawn?
         Your answer must be less than 200 words!'''
@@ -138,7 +144,7 @@ def gpt_actions(env, obs, dialog_queue, dialog4ref_queue, gpt_path, gpt_error, t
             content = results[idx]
             # dialog_queue[idx].append({'role': 'assistant', 'content': content})
             dialog4ref_queue[idx].append({'role': 'assistant', 'content': content})
-        
+
         for idx, agent_dialog in enumerate(dialog4ref_queue):
              with open(f'''{gpt_path}/{env.get_agent(str(idx)).endogenous['name']}''', 'a') as f:
                 for dialog in list(agent_dialog)[-2:]:

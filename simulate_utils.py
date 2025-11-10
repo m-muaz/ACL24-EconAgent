@@ -25,7 +25,7 @@ def prettify_document(document: str) -> str:
     return cleaned
 
 
-def get_multiple_completion(dialogs, num_cpus=15, temperature=0, max_tokens=100):
+def get_multiple_completion(dialogs, num_cpus=15, temperature=0, max_tokens=250):
     from functools import partial
     get_completion_partial = partial(get_completion, temperature=temperature, max_tokens=max_tokens)
     with multiprocessing.Pool(processes=num_cpus) as pool:
@@ -33,7 +33,7 @@ def get_multiple_completion(dialogs, num_cpus=15, temperature=0, max_tokens=100)
     total_cost = sum([cost for _, cost in results])
     return [response for response, _ in results], total_cost
 
-def get_completion(dialogs, temperature=0, max_tokens=100):
+def get_completion(dialogs, temperature=0, max_tokens=250):
     from openai import OpenAI
     
     client = OpenAI(
@@ -48,10 +48,11 @@ def get_completion(dialogs, temperature=0, max_tokens=100):
     max_retries = 20
     for i in range(max_retries):
         try:
-            response = client.chat.completions.create(model="google/gemma-3-270m",
-            messages=dialogs,
-            temperature=temperature,
-            max_tokens=max_tokens)
+            response = client.chat.completions.create(model="ibm-granite/granite-4.0-h-350m",
+                                                      messages=dialogs,
+                                                      temperature=temperature,
+                                                      max_tokens=max_tokens,
+                                                      response_format={"type": "json_object"})
             prompt_tokens = response.usage.prompt_tokens
             completion_tokens = response.usage.completion_tokens
             this_cost = prompt_tokens / 1000 * prompt_cost_1k + completion_tokens / 1000 * completion_cost_1k

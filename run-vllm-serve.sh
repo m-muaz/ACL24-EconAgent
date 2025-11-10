@@ -13,7 +13,7 @@ source .venv/bin/activate
 # Start vLLM server
 export HOST=$(hostname)
 export PORT=8000
-export MODEL_NAME="google/gemma-3-270m"
+export MODEL_NAME="ibm-granite/granite-4.0-h-350m"
 
 vllm serve $MODEL_NAME --port $PORT --host 0.0.0.0 > vllm.log 2>&1 &
 VLLM_PID=$!
